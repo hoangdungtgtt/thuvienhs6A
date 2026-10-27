@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tra cứu tài khoản Thư viện - Lớp 6A</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 30px 20px;
+  }
+  .container {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    padding: 32px;
+    width: 100%;
+    max-width: 520px;
+  }
+  h1 { text-align: center; color: #333; font-size: 22px; margin-bottom: 6px; }
+  .subtitle { text-align: center; color: #888; font-size: 14px; margin-bottom: 24px; }
+  label { display: block; font-weight: 600; color: #555; margin-bottom: 8px; font-size: 14px; }
+  .suggestions { position: relative; }
+  input[type="text"] {
+    width: 100%; padding: 14px 16px; border: 2px solid #e0e0e0;
+    border-radius: 10px; font-size: 16px; outline: none; transition: border-color 0.2s;
+  }
+  input[type="text"]:focus { border-color: #667eea; }
+  .suggestion-list {
+    position: absolute; top: 100%; left: 0; right: 0;
+    background: #fff; border: 2px solid #667eea; border-top: none;
+    border-radius: 0 0 10px 10px; max-height: 220px; overflow-y: auto;
+    z-index: 10; display: none;
+  }
+  .suggestion-list.show { display: block; }
+  .suggestion-item {
+    padding: 10px 16px; cursor: pointer; font-size: 15px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .suggestion-item:hover, .suggestion-item.active { background: #f0f3ff; }
+  button.search-btn {
+    width: 100%; padding: 14px; margin-top: 18px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff; border: none; border-radius: 10px; font-size: 16px;
+    font-weight: 600; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+  }
+  button.search-btn:hover {
+    transform: translateY(-2px); box-shadow: 0 8px 20px rgba(102,126,234,0.4);
+  }
+  .message {
+    margin-top: 16px; padding: 12px; border-radius: 8px;
+    font-size: 14px; text-align: center; display: none;
+  }
+  .message.error { display: block; background: #ffe5e5; color: #c00; }
+  .result { margin-top: 24px; display: none; animation: fadeIn 0.3s ease; }
+  .result.show { display: block; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .student-name {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff; padding: 14px 18px; border-radius: 10px 10px 0 0;
+    font-size: 17px; font-weight: 600; text-align: center;
+  }
+  .field {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 16px; background: #f8f9ff; border-bottom: 1px solid #e8ebff;
+  }
+  .field:last-child { border-bottom: none; border-radius: 0 0 10px 10px; }
+  .field .label {
+    font-size: 12px; color: #888; text-transform: uppercase;
+    font-weight: 700; min-width: 110px; letter-spacing: 0.5px;
+  }
+  .field .value {
+    flex: 1; font-size: 15px; color: #222;
+    font-family: 'Consolas', 'Courier New', monospace;
+    word-break: break-all; font-weight: 600;
+  }
+  .copy-btn {
+    background: #667eea; color: #fff; border: none;
+    padding: 8px 14px; border-radius: 6px; font-size: 13px;
+    font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.2s;
+  }
+  .copy-btn:hover { background: #5568d3; }
+  .copy-btn.copied { background: #22a55c; }
+  .open-link {
+    display: block; text-align: center; background: #22a55c; color: #fff;
+    text-decoration: none; padding: 14px; border-radius: 10px;
+    font-weight: 600; margin-top: 16px; font-size: 15px;
+    transition: background 0.2s; cursor: pointer; border: none; width: 100%;
+  }
+  .open-link:hover { background: #1c8a4d; }
+  .steps {
+    margin-top: 18px; background: #fffbe8; border-left: 4px solid #f5b800;
+    padding: 12px 16px; border-radius: 8px; font-size: 13px;
+    color: #665200; line-height: 1.7;
+  }
+  .steps b { color: #4a3c00; }
+  .log-status {
+    margin-top: 12px; font-size: 12px; text-align: center; color: #888;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📚 Tra cứu tài khoản Thư viện</h1>
+  <p class="subtitle">Trường THCS Tây Thái Ninh — Lớp 6A</p>
+
+  <label for="nameInput">Nhập họ và tên học sinh</label>
+  <div class="suggestions">
+    <input type="text" id="nameInput" placeholder="Ví dụ: Trần Mai Anh" autocomplete="off">
+    <div class="suggestion-list" id="suggestionList"></div>
+  </div>
+
+  <button class="search-btn" id="searchBtn">🔍 Tra cứu</button>
+  <div class="message" id="message"></div>
+
+  <div class="result" id="result">
+    <div class="student-name" id="studentName"></div>
+
+    <div class="field">
+      <span class="label">👤 Tên đăng nhập</span>
+      <span class="value" id="userVal"></span>
+      <button class="copy-btn" data-copy="user">Copy</button>
+    </div>
+
+    <div class="field">
+      <span class="label">🔑 Mật khẩu</span>
+      <span class="value" id="passVal"></span>
+      <button class="copy-btn" data-copy="pass">Copy</button>
+    </div>
+
+    <button class="open-link" id="openLink">🚀 Mở trang đăng nhập thư viện</button>
+
+    <div class="steps">
+      <b>Hướng dẫn:</b><br>
+      B1: Bấm <b>Mở trang đăng nhập thư viện</b>.<br>
+      B2: Bấm <b>Copy</b> tên đăng nhập → dán vào trang.<br>
+      B3: Bấm <b>Copy</b> mật khẩu → dán vào trang.<br>
+      B4: Đăng nhập để đọc sách online và mượn trả sách giấy.
+    </div>
+
+    <div class="log-status" id="logStatus"></div>
+  </div>
+</div>
+
+<script>
+// ====== ✅ URL WEB APP MỚI (bạn vừa gửi) ======
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxXHuGABn63rcCKGO-TdJuNi7wl79CxjyTYg6izy73N3ZVrbXvb_zfMasaGgOfB8MRW/exec";
+
+// ====== LINK ĐĂNG NHẬP THƯ VIỆN ======
+const LIB_URL = "https://thcstaythaininh.thuviennhatruong.edu.vn/login";
+
+// ====== DỮ LIỆU HỌC SINH ======
+const students = [
+  { name: "Trần Mai Anh", user: "tranmaianh1907_1585", pass: "hns12345" },
+  { name: "Trần Hồng Cẩm", user: "tranhongcam1907_1590", pass: "hns12345" },
+  { name: "Trần Nguyên Chi", user: "trannguyenchi1907_1587", pass: "hns12345" },
+  { name: "Đặng Phương Chi", user: "dangphuongchi1907_1586", pass: "hns12345" },
+  { name: "Bùi Quỳnh Chi", user: "buiquynhchi1907_1588", pass: "hns12345" },
+  { name: "Nguyễn Thị Chi", user: "nguyenthichi1907_1589", pass: "hns12345" },
+  { name: "Ngô Mạnh Cường", user: "ngomanhcuong1907_1591", pass: "hns12345" },
+  { name: "Bùi Hiền Dịu", user: "buihiendiu1907_1593", pass: "hns12345" },
+  { name: "Nguyễn Thúy Dung", user: "nguyenthuydung1907_1594", pass: "hns12345" },
+  { name: "Trần Đức Duy", user: "tranducduy1907_1595", pass: "hns12345" },
+  { name: "Nguyễn Thành Đạt", user: "nguyenthanhdat1907_1592", pass: "hns12345" },
+  { name: "Bùi Đức Hiếu", user: "buiduchieu1907_1598", pass: "hns12345" },
+  { name: "Nguyễn Trung Hiếu", user: "nguyentrunghieu1907_1597", pass: "hns12345" },
+  { name: "Lê Huy Hoàng", user: "lehuyhoang1907_1601", pass: "hns12345" },
+  { name: "Bùi Minh Hòa", user: "buiminhhoa1907_1599", pass: "hns12345" },
+  { name: "Nguyễn Thái Hòa", user: "nguyenthaihoa1907_1600", pass: "hns12345" },
+  { name: "Nguyễn Ngọc Hùng", user: "nguyenngochung1907_1602", pass: "hns12345" },
+  { name: "Bùi Đức Khánh", user: "buiduckhanh1907_1603", pass: "hns12345" },
+  { name: "Nguyễn Hoàng Ngọc Khánh", user: "nguyenhoangngockhanh1907_1604", pass: "hns12345" },
+  { name: "Hoàng Khánh Long", user: "hoangkhanhlong1907_1605", pass: "hns12345" },
+  { name: "Bùi Khánh Ly", user: "buikhanhly1907_1606", pass: "hns12345" },
+  { name: "Đỗ Anh Minh", user: "doanhminh1907_1608", pass: "hns12345" },
+  { name: "Hà Trần Minh", user: "hatranminh1907_1607", pass: "hns12345" },
+  { name: "Trần Đức Nam", user: "tranducnam1907_1609", pass: "hns12345" },
+  { name: "Nguyễn Hoàng Hải Nam", user: "nguyenhoanghainam1907_1610", pass: "hns12345" },
+  { name: "Bùi Trung Nghĩa", user: "buitrungnghia1907_1611", pass: "hns12345" },
+  { name: "Nguyễn Thị Bảo Ngọc", user: "nguyenthibaongoc1907_1612", pass: "hns12345" },
+  { name: "Bùi Ngọc Nhi", user: "buingocnhi1907_1613", pass: "hns12345" },
+  { name: "Bùi Mai Dy Niên", user: "buimaidynien1907_1614", pass: "hns12345" },
+  { name: "Trần Minh Phương", user: "tranminhphuong1907_1615", pass: "hns12345" },
+  { name: "Trần Đại Quang", user: "trandaiquang1907_1620", pass: "hns12345" },
+  { name: "Nguyễn Thị Lệ Quyên", user: "nguyenthilequyen1907_1616", pass: "hns12345" },
+  { name: "Trần Diễm Quỳnh", user: "trandiemquynh1907_1617", pass: "hns12345" },
+  { name: "Bùi Nguyễn Tuệ Sam", user: "buinguyentuessam1907_1618", pass: "hns12345" },
+  { name: "Lê Tiến Tài", user: "letientai1907_1619", pass: "hns12345" },
+  { name: "Nguyễn Trung Thành", user: "nguyentrungthanh1907_1621", pass: "hns12345" },
+  { name: "Trần Đức Thắng", user: "tranducthang1907_1622", pass: "hns12345" },
+  { name: "Bùi Gia Thịnh", user: "buigiathinh1907_1596", pass: "hns12345" },
+  { name: "Bùi Đức Tiến", user: "buiductien1907_1623", pass: "hns12345" },
+  { name: "Ngô Xuân Tùng", user: "ngoxuantung1907_1624", pass: "hns12345" }
+];
+
+let currentStudent = null;
+
+function normalize(str) {
+  return str.toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const nameInput = document.getElementById("nameInput");
+const suggestionList = document.getElementById("suggestionList");
+const messageEl = document.getElementById("message");
+const resultEl = document.getElementById("result");
+const logStatusEl = document.getElementById("logStatus");
+let activeIndex = -1;
+let currentSuggestions = [];
+
+function showSuggestions(query) {
+  const q = normalize(query);
+  if (!q) {
+    suggestionList.classList.remove("show");
+    currentSuggestions = [];
+    return;
+  }
+  currentSuggestions = students.filter(s => normalize(s.name).includes(q));
+  if (currentSuggestions.length === 0) {
+    suggestionList.classList.remove("show");
+    return;
+  }
+  suggestionList.innerHTML = currentSuggestions
+    .map((s, i) => `<div class="suggestion-item" data-index="${i}">${s.name}</div>`)
+    .join("");
+  suggestionList.classList.add("show");
+  activeIndex = -1;
+
+  document.querySelectorAll(".suggestion-item").forEach(item => {
+    item.addEventListener("click", () => {
+      nameInput.value = currentSuggestions[item.dataset.index].name;
+      suggestionList.classList.remove("show");
+      traCuu();
+    });
+  });
+}
+
+nameInput.addEventListener("input", e => showSuggestions(e.target.value));
+
+nameInput.addEventListener("keydown", e => {
+  const items = document.querySelectorAll(".suggestion-item");
+  if (items.length && suggestionList.classList.contains("show")) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      activeIndex = (activeIndex + 1) % items.length;
+      updateActive(items);
+      return;
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      activeIndex = (activeIndex - 1 + items.length) % items.length;
+      updateActive(items);
+      return;
+    }
+    if (e.key === "Enter" && activeIndex >= 0) {
+      e.preventDefault();
+      items[activeIndex].click();
+      return;
+    }
+    if (e.key === "Escape") suggestionList.classList.remove("show");
+  }
+  if (e.key === "Enter") {
+    e.preventDefault();
+    traCuu();
+  }
+});
+
+function updateActive(items) {
+  items.forEach((it, i) => it.classList.toggle("active", i === activeIndex));
+  if (items[activeIndex]) items[activeIndex].scrollIntoView({ block: "nearest" });
+}
+
+document.addEventListener("click", e => {
+  if (!e.target.closest(".suggestions")) suggestionList.classList.remove("show");
+});
+
+function traCuu() {
+  const input = nameInput.value.trim();
+  if (!input) {
+    showError("Vui lòng nhập họ tên học sinh.");
+    return;
+  }
+  const norm = normalize(input);
+  let student = students.find(s => normalize(s.name) === norm);
+
+  if (!student) {
+    const matches = students.filter(s => normalize(s.name).includes(norm));
+    if (matches.length === 1) {
+      student = matches[0];
+    } else if (matches.length > 1) {
+      showError("Có nhiều học sinh trùng tên. Vui lòng chọn từ danh sách gợi ý.");
+      showSuggestions(input);
+      return;
+    } else {
+      showError("❌ Không tìm thấy học sinh. Vui lòng kiểm tra lại họ tên.");
+      resultEl.classList.remove("show");
+      currentStudent = null;
+      return;
+    }
+  }
+
+  nameInput.value = student.name;
+  suggestionList.classList.remove("show");
+  messageEl.className = "message";
+  currentStudent = student;
+  hienThiKetQua(student);
+}
+
+function showError(msg) {
+  messageEl.textContent = msg;
+  messageEl.className = "message error";
+  resultEl.classList.remove("show");
+}
+
+function hienThiKetQua(student) {
+  document.getElementById("studentName").textContent = "👤 " + student.name;
+  document.getElementById("userVal").textContent = student.user;
+  document.getElementById("passVal").textContent = student.pass;
+  logStatusEl.textContent = "";
+  resultEl.classList.add("show");
+  resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+// ====== 🔥 GHI LOG KHI BẤM NÚT MỞ TRANG ======
+document.getElementById("openLink").addEventListener("click", function () {
+  window.open(LIB_URL, "_blank");
+
+  if (!currentStudent) {
+    logStatusEl.textContent = "⚠️ Chưa có học sinh — không ghi được nhật ký.";
+    return;
+  }
+  logStatusEl.textContent = "⏳ Đang ghi nhật ký...";
+  logToSheet(currentStudent.name);
+});
+
+// ====== GỬI DỮ LIỆU LÊN GOOGLE SHEET ======
+function logToSheet(name) {
+  const url = `${WEB_APP_URL}?action=log&name=${encodeURIComponent(name)}`;
+
+  fetch(url, { method: "GET", mode: "cors" })
+    .then(res => res.json())
+    .then(data => {
+      if (data.ok) {
+        if (data.action === "updated") {
+          logStatusEl.textContent = `✅ Đã ghi nhận — Lượt truy cập thứ ${data.count} lúc ${data.time}`;
+        } else if (data.action === "inserted") {
+          logStatusEl.textContent = `✅ Đã ghi nhận lần đầu lúc ${data.time}`;
+        } else {
+          logStatusEl.textContent = `✅ Đã ghi nhận.`;
+        }
+      } else {
+        logStatusEl.textContent = "⚠️ Không ghi được: " + (data.error || "Lỗi không rõ");
+      }
+    })
+    .catch(err => {
+      logStatusEl.textContent = "⚠️ Không kết nối được Google Sheet: " + err.message;
+    });
+}
+
+// ====== COPY ======
+document.querySelectorAll(".copy-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    let text = "";
+    if (btn.dataset.copy === "user") text = document.getElementById("userVal").textContent;
+    else if (btn.dataset.copy === "pass") text = document.getElementById("passVal").textContent;
+
+    copyToClipboard(text).then(() => {
+      const old = btn.textContent;
+      btn.textContent = "✓ Đã copy";
+      btn.classList.add("copied");
+      setTimeout(() => {
+        btn.textContent = old;
+        btn.classList.remove("copied");
+      }, 1500);
+    });
+  });
+});
+
+function copyToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text);
+  }
+  return new Promise((resolve, reject) => {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.top = "-1000px";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      document.execCommand("copy");
+      resolve();
+    } catch (e) {
+      reject(e);
+    } finally {
+      document.body.removeChild(ta);
+    }
+  });
+}
+
+document.getElementById("searchBtn").addEventListener("click", traCuu);
+nameInput.focus();
+</script>
+</body>
+</html>
